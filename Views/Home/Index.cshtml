@@ -1,0 +1,638 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="container">
+    <div class="row" id="default-page" style="display: block;">
+        <div class="col-sm-8 offset-sm-2">
+            <div>
+                <h2>
+                    Performance Test
+                    <br />
+                    <small style="font-size: 40%;"><a href="https://www.awwwards.com/what-are-frameworks-22-best-responsive-css-frameworks-for-web-design.html" target="_blank">CSS Framework Suggestions</a></small>
+                </h2>
+            </div>
+
+            <div class="input-group mb-1 test-site-control">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" style="font-size: 1.5rem; background: #2fdab8; color: white; border: none;">http://</span>
+                </div>
+                <input type="text" class="form-control" id="txt-url" placeholder="www.website.com">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="button" title="Start Test" id="btn-test">
+                        <i class="fas fa-flask"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="jumbotron p-3">
+                <label>Browser</label>
+                <select class="form-control mb-1" id="cmb-browser">
+                    <option value="Chrome">Chrome</option>
+                    <option value="Firefox">Firefox</option>
+                    <option value="Opera">Opera</option>
+                </select>
+
+                <label>Test Location</label>
+                <select class="form-control mb-1" id="cmb-location">
+                    <optgroup label="Asia">
+                        <option>Mumbai, India - EC2 (Chrome,Firefox,Opera)</option>
+                        <option>Singapore (IE10, Chrome,Firefox)</option>
+                        <option>Singapore - EC2 (Chrome,Firefox,Opera)</option>
+                        <option>Jakarta, Indonesia (Chrome,Firefox,Opera)</option>
+                        <option>Hong Kong, China (Chrome,Firefox)</option>
+                        <option>Seoul, Korea EC2 (Chrome,Firefox)</option>
+                        <option>Seoul, Korea (IE8,IE11,Chrome,Canary,Firefox)</option>
+                        <option>Tokyo, Japan - EC2 (Chrome,Firefox,Opera)</option>
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="progress-page" style="display: none;">
+        <div class="col-sm-8 offset-sm-2">
+            <label>Performing. This might take a while.</label>
+            <div class="progress">
+                <div id="progress-test"
+                     class="progress-bar progress-bar-striped progress-bar-animated bg-site-primary"
+                     role="progressbar"
+                     aria-valuenow="25"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     style="width: 25%"></div>
+            </div>
+            <small id="status">...</small>
+        </div>
+    </div>
+
+    <div class="row" id="result-page" style="display: none;">
+        <div class="border-bottom pb-2 mb-2" style="position: sticky; top: 0; z-index: 999; background-color: white;">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h1 id="result-test-url">[URL Request]</h1>
+                    <h5 id="result-test-browser">
+                        [Browser] <small>[version]</small></h3>
+
+                        <ul class="nav nav-pills" id="nav-result">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" id="nav-result-summary" data-target="result-summary">Summary</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" id="nav-result-detail" data-target="result-detail">Detail</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" id="nav-result-performance" data-target="result-performance">Performance</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" id="nav-result-screenshoots" data-target="result-screenshoots">Browser Screenshots</a>
+                            </li>
+                        </ul>
+                </div>
+
+                <div class="col-sm-6 pt-3" id="grade-container" style="height: 120px; position: absolute; right: 0px; bottom: 0px;">
+
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="test-result-content mb-3" id="result-summary">
+                    detail
+                </div>
+
+                <div class="test-result-content mb-3" id="result-detail">
+                    detail
+                </div>
+
+                <div class="test-result-content mb-3" id="result-performance">
+                    perfomance
+                </div>
+
+                <div class="test-result-content mb-3" id="result-screenshoots">
+                    perfomance
+                </div>
+            </div>
+        </div>
+
+        <div class="border-top pb-2 pt-2 mt-2" style="text-align: right; position: sticky; bottom: 0; z-index: 999; background-color: white;">
+            <button class="btn btn-primary" type="button" id="btn-new-test" onclick="clearText();">
+                <i class="fas fa-flask"></i> Perform Another Test
+            </button>
+        </div>
+    </div>
+</div>
+
+@section scripts 
+{
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="~/Scripts/js/jquery-3.3.1.min.js"></script>
+
+<script type="text/javascript">
+    var checkInterval = 2, testProgress, resultImages;
+    var isResultReady = false, isScreenshotReady = false;
+
+    (() => {
+        google.charts.load('current', {'packages':['corechart', 'table']});
+        google.charts.setOnLoadCallback(() => {
+            console.log("Charts Library Ready!");
+        });
+
+        testProgress = document.querySelector("#progress-test");
+        testProgress.style.width = "0%";
+
+        document.querySelector("#default-page").style.display = "block";
+        document.querySelector("#progress-page").style.display = "none";
+        document.querySelector("#result-page").style.display = "none";
+
+        document.querySelector("#btn-new-test").addEventListener("click", (evt) => {
+            document.querySelector("#default-page").style.display = "block";
+            document.querySelector("#progress-page").style.display = "none";
+            document.querySelector("#result-page").style.display = "none";
+
+            isResultReady = false;
+            isScreenshotReady = false;
+        });
+
+        let showResult = (data) => {
+            document.querySelector("#result-test-url").innerHTML = data.url;
+            document.querySelector("#result-test-browser").innerHTML = `${data.runs["1"].firstView.browser_name} <small>${data.runs["1"].firstView.browserVersion}</small>`;
+
+            document.querySelectorAll("li.nav-item > a.nav-link").forEach(el => {
+                el.classList.remove("active");
+            });
+
+            document.querySelectorAll("div.test-result-content").forEach(el => {
+                el.style.display = "none";
+
+                while(el.lastChild) {
+                    el.removeChild(el.lastChild);
+                }
+            });
+
+            document.querySelector("#nav-result-summary").classList.add("active");
+            document.querySelector("#result-summary").style.display = "block";
+
+            isResultReady = true;
+
+            //PERFOMANCE TAB
+            $.ajax({
+                url: `http://www.webpagetest.org/result/${data.id}/1/performance_optimization`,
+                method: "get",
+                success: (result) => {
+                    let dummyEl = document.createElement("div");
+                        dummyEl.innerHTML = result;
+
+                    let resultEl = dummyEl.querySelector("div.test_results-content");
+
+                    resultEl.querySelectorAll("img").forEach(el => {
+                        el.src = el.src.replace(window.location.origin, 'http://www.webpagetest.org');
+                    });
+
+                    document.querySelector("#result-performance").appendChild(resultEl);
+                }
+            }).done(() => {
+            });
+
+            //DETAIL TAB
+            $.ajax({
+                url: `http://www.webpagetest.org/result/${data.id}/1/details`,
+                method: "get",
+                success: (result) => {
+                    let dummyEl = document.createElement("div");
+                        dummyEl.innerHTML = result;
+
+                    let resultEl = document.createElement("div");
+
+                    resultEl.appendChild(dummyEl.querySelector("#tableResults"));
+                    resultEl.appendChild(document.createElement("br"));
+                    resultEl.appendChild(dummyEl.querySelector("#tableW3CTiming"));
+
+                    resultEl.appendChild(document.createElement("br"));
+                    resultEl.appendChild(document.createElement("br"));
+
+                    let waterfallHeader = document.createElement("h5");
+                        waterfallHeader.innerHTML = "Waterfall View";
+                        waterfallHeader.style.textAlign = "center";
+
+                    resultEl.appendChild(waterfallHeader);
+                    resultEl.appendChild(dummyEl.querySelector("img.waterfall-image"));
+
+                    resultEl.appendChild(document.createElement("br"));
+                    resultEl.appendChild(document.createElement("br"));
+
+                    let connectionHeader = document.createElement("h5");
+                        connectionHeader.innerHTML = "Connection View";
+                        connectionHeader.style.textAlign = "center";
+
+                    let connectionLegend = document.createElement("div");
+                        connectionLegend.innerHTML = `<table border="1" bordercolor="silver" cellpadding="2px" cellspacing="0" style="width:auto; font-size:11px; margin-left:auto; margin-right:auto;"><tbody><tr><td><table><tbody><tr><td><div class="bar" style="width:15px; background-color:#007B84"></div></td><td>DNS Lookup</td></tr></tbody></table></td><td><table><tbody><tr><td><div class="bar" style="width:15px; background-color:#FF7B00"></div></td><td>Initial Connection</td></tr></tbody></table></td><td><table><tbody><tr><td><div class="bar" style="width:15px; background-color:#CF25DF"></div></td><td>SSL Negotiation</td></tr></tbody></table></td><td><table><tbody><tr><td><div class="bar" style="width:2px; background-color:#28BC00"></div></td><td>Start Render</td></tr></tbody></table></td><td><table><tbody><tr><td><div class="bar" style="width:15px; background-color:#D888DF"></div></td><td>DOM Content Loaded</td></tr></tbody></table></td><td><table><tbody><tr><td><div class="bar" style="width:15px; background-color:#C0C0FF"></div></td><td>On Load</td></tr></tbody></table></td><td><table><tbody><tr><td><div class="bar" style="width:2px; background-color:#0000FF"></div></td><td>Document Complete</td></tr></tbody></table></td></tr></tbody></table>`;
+
+                    resultEl.appendChild(connectionHeader);
+                    resultEl.appendChild(connectionLegend);
+                    resultEl.appendChild(document.createElement("br"));
+                    resultEl.appendChild(dummyEl.querySelector("img#connectionView_fv_1"));
+
+                    resultEl.appendChild(document.createElement("br"));
+                    resultEl.appendChild(document.createElement("br"));
+
+                    let requestHeader = document.createElement("h5");
+                        requestHeader.innerHTML = "Request Details";
+                        requestHeader.style.textAlign = "center";
+
+                    let requestLegend = document.createElement("div");
+                        requestLegend.innerHTML = `<table border="1" bordercolor="silver" cellpadding="2px" cellspacing="0" style="width:auto; font-size:11px; margin-left:auto; margin-right:auto;"><tbody><tr><td><table><tbody><tr><td><div class="bar" style="width:15px; background-color:#dfffdf"></div></td><td>Before Start Render</td></tr></tbody></table></td><td><table><tbody><tr><td><div class="bar" style="width:15px; background-color:#dfdfff"></div></td><td>Before On Load</td></tr></tbody></table></td><td><table><tbody><tr><td><div class="bar" style="width:15px; background-color:gainsboro"></div></td><td>After On Load</td></tr></tbody></table></td></tr></tbody></table>`;
+
+                    let requestDetail = document.createElement("div");
+                        requestDetail.style.textAlign = "center";
+                        requestDetail.appendChild(dummyEl.querySelector("table.tableDetails"));
+                        requestDetail.querySelector("caption").remove();
+
+                    resultEl.appendChild(requestHeader);
+                    resultEl.appendChild(requestLegend);
+                    resultEl.appendChild(document.createElement("br"));
+                    resultEl.appendChild(requestDetail);
+
+
+                    resultEl.querySelectorAll("img").forEach(el => {
+                        el.src = el.src.replace(window.location.origin, 'http://www.webpagetest.org');
+                        el.removeAttribute("onload");
+                        el.style.display = "block";
+                        el.style.margin = "auto";
+
+                        switch(el.id) {
+                            case "connectionView_fv_1":
+                                el.style.width = "auto";
+                                el.style.height = "auto";
+                                break;
+                        }
+                    });
+
+                    document.querySelector("#result-detail").appendChild(resultEl);
+                }
+            }).done(() => {
+            });
+
+            //SUMMARY TAB
+            $.ajax({
+                url: `http://www.webpagetest.org/result/${data.id}/`,
+                method: "get",
+                success: (result) => {
+                    let dummyEl = document.createElement("div");
+                        dummyEl.innerHTML = result;
+
+                    document.querySelector("#grade-container").removeChild(document.querySelector("#grade-container").lastChild);
+                    document.querySelector("#grade-container").appendChild(dummyEl.querySelector("#grades"));
+                    document.querySelector("#grade-container").querySelectorAll("img").forEach(el => {
+                        el.src = el.src.replace(window.location.origin, 'http://www.webpagetest.org');
+                        el.removeAttribute("onload");
+                        el.style.display = "block";
+                        el.style.margin = "auto";
+                    });
+                }
+            }).done(() => {
+            });
+
+            document.querySelector("#default-page").style.display = "none";
+            document.querySelector("#progress-page").style.display = "none";
+            document.querySelector("#result-page").style.display = "block";
+
+            let contentBreakdownContainer = document.createElement("div");
+                contentBreakdownContainer.classList.add("row");
+
+            let title1 = document.createElement("div");
+                title1.classList.add("col-sm-12");
+                title1.innerHTML = `<h5 style="text-align: center;">Content Breakdown</h5>`;
+
+            contentBreakdownContainer.appendChild(title1);
+
+            drawRequestChart(data, contentBreakdownContainer);
+            drawBytes(data, contentBreakdownContainer);
+
+            let title2 = document.createElement("div");
+                title2.classList.add("col-sm-12");
+                title2.classList.add("mt-3");
+                title2.innerHTML = `<h5 style="text-align: center;">Content Breakdown by domain</h5>`;
+
+            contentBreakdownContainer.appendChild(title2);
+
+            drawDomainRequestChart(data, contentBreakdownContainer);
+            drawDomainBytes(data, contentBreakdownContainer);
+
+            document.querySelector("#result-summary").appendChild(contentBreakdownContainer);
+
+            if (isScreenshotReady) {
+                drawScreenShoots();
+            }
+        };
+
+        let checkResult = (url, id) => {
+            let isRequesting = false;
+            let interval = setInterval(() => {
+                if (isRequesting) return;
+
+                isRequesting = true;
+
+                $.ajax({
+                    url: url,
+                    method: "get",
+                    success: (result) => {
+                        testProgress.style.width = "75%";
+                        isRequesting = false;
+
+                        if (result.statusCode === 200) {
+                            testProgress.style.width = "100%";
+                            window.clearInterval(interval);
+
+                            showResult(result.data);
+                            document.querySelector("#status").innerHTML = "...";
+                        }
+
+                        document.querySelector("#status").innerHTML = result.statusText;
+                    },
+                    error: (error) => {
+                        isRequesting = false;
+                    }
+                });
+            }, checkInterval * 1000);
+        };
+
+        document.querySelector("#cmb-location").addEventListener("change", (evt) => {
+            let index = evt.target.selectedIndex;
+            let text = evt.target[index].innerHTML;
+
+            let markerStartIndex = text.indexOf('(');
+            let markerEndIndex = text.indexOf(')');
+
+            let browserNames = text.substr(markerStartIndex, markerEndIndex);
+                browserNames = browserNames.replace('(', '');
+                browserNames = browserNames.replace(')', '');
+
+            let browsers = browserNames.split(',');
+
+            let cmbBrowser = document.querySelector("#cmb-browser");
+            while(cmbBrowser.lastChild) {
+                cmbBrowser.removeChild(cmbBrowser.lastChild);
+            }
+
+            browsers.forEach(browser => {
+                let el = document.createElement("option");
+                    el.value = browser;
+                    el.innerHTML = browser;
+
+                cmbBrowser.appendChild(el);
+            });
+        });
+
+        document.querySelector("#btn-test").addEventListener("click", (evt) => {
+            testProgress.style.width = "25%";
+
+            document.querySelector("#default-page").style.display = "none";
+            document.querySelector("#progress-page").style.display = "block";
+            document.querySelector("#result-page").style.display = "none";
+
+            let txtUrl = document.querySelector("#txt-url");
+            let cmbBrowser = document.querySelector("#cmb-browser");
+
+            let index = cmbBrowser.selectedIndex;
+            let value = cmbBrowser[index].value;
+
+            $.ajax({
+                url: `http://www.webpagetest.org/runtest.php?url=${txtUrl.value}&runs=1&f=json&k=A.dce135c71ce278eeba786a2216b24a1a`,
+                method: "get",
+                success: (result) => {
+                    testProgress.style.width = "50%";
+                    checkResult(result.data.jsonUrl, result.data.testId);
+                }
+            });
+
+            $.ajax({
+                url: `/Home/GetScreenshots`,
+                method: "get",
+                data: { requesturl: "http://" + txtUrl.value },
+                success: (result) => {
+                    resultImages = result.Images;
+                    isScreenshotReady = true;
+
+                    if (isResultReady) {
+                        drawScreenShoots();
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll("#nav-result > .nav-item > a").forEach(el => {
+            el.addEventListener("click", (evt) => {
+                document.querySelectorAll("#nav-result > .nav-item > a").forEach(nav => {
+                    nav.classList.remove("active");
+                });
+
+                document.querySelectorAll(".test-result-content").forEach(testResultContentEl => {
+                    testResultContentEl.style.display = "none";
+                });
+
+                el.classList.add("active");
+                document.querySelector(`#${evt.target.getAttribute("data-target")}`).style.display = "block";
+            });
+        });
+
+        //checkResult("http://www.webpagetest.org/jsonResult.php?test=180225_KJ_0b88aee9c86e0aa7d7aa8876aed63012", "");
+    })();
+
+    function rgb2html(rgb) {
+        return "#" + ((1 << 24) + (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]).toString(16).slice(1);
+    }
+
+    function drawScreenShoots() {
+        for (let prop in resultImages) {
+            let container = document.createElement("div");
+            container.classList.add("screenshot");
+
+            let link = document.createElement("a");
+            link.href = `/Content/ResultImages/${resultImages[prop]}`;
+            link.target = "_blank";
+
+            let label = document.createElement("label");
+            label.innerHTML = `${prop}`;
+
+            let img = document.createElement("img");
+            img.src = `/Content/ResultImages/${resultImages[prop]}`;
+
+            link.appendChild(img);
+
+            container.appendChild(label);
+            container.appendChild(document.createElement("br"));
+            container.appendChild(link);
+
+            document.querySelector("#result-screenshoots").appendChild(container)
+        }
+    }
+
+    function drawRequestChart(data, parentNode) {
+        let fv = data.runs["1"].firstView;
+
+        let requests = new google.visualization.DataTable();
+            requests.addColumn('string', 'MIME Type');
+            requests.addColumn('number', 'Requests');
+            requests.addRows(Object.keys(fv.breakdown).length);
+
+        let index = 0;
+        let requestColors = new Array();
+        for (let prop in fv.breakdown) {
+            requests.setValue(index, 0, prop);
+            requests.setValue(index, 1, fv.breakdown[prop].requests);
+
+            requestColors.push(rgb2html(fv.breakdown[prop].color));
+
+            index++;
+        }
+
+        let pieChartContainer = document.createElement("div");
+        let pieChart = new google.visualization.PieChart(pieChartContainer);
+            pieChart.draw(requests, {
+                title: 'Requests',
+                width: 550,
+                height: 350,
+                margin: "auto",
+                colors: requestColors
+            });
+
+        let tableChartContainer = document.createElement("div");
+            tableChartContainer.style.textAlign = "center";
+
+        let tableChart = new google.visualization.Table(tableChartContainer);
+            tableChart.draw(requests, {showRowNumber: false, sortColumn: 1, sortAscending: false});
+
+        let chartContainer = document.createElement("div");
+            chartContainer.classList.add("col-sm-6");
+            chartContainer.appendChild(pieChartContainer);
+            chartContainer.appendChild(tableChartContainer);
+
+        parentNode.appendChild(chartContainer);
+    }
+
+    function drawBytes(data, parentNode) {
+        let fv = data.runs["1"].firstView;
+
+        let requests = new google.visualization.DataTable();
+            requests.addColumn('string', 'MIME Type');
+            requests.addColumn('number', 'Bytes');
+            requests.addColumn('number', 'Uncompressed');
+            requests.addRows(Object.keys(fv.breakdown).length);
+
+        let index = 0;
+        let requestColors = new Array();
+        for (let prop in fv.breakdown) {
+            requests.setValue(index, 0, prop);
+            requests.setValue(index, 1, fv.breakdown[prop].bytes);
+            requests.setValue(index, 2, fv.breakdown[prop].bytesUncompressed);
+
+            requestColors.push(rgb2html(fv.breakdown[prop].color));
+
+            index++;
+        }
+
+        let pieChartContainer = document.createElement("div");
+        let pieChart = new google.visualization.PieChart(pieChartContainer);
+            pieChart.draw(requests, {
+                title: 'Bytes',
+                width: 550,
+                height: 350,
+                margin: "auto",
+                colors: requestColors
+            });
+
+        let tableChartContainer = document.createElement("div");
+            tableChartContainer.style.textAlign = "center";
+
+        let tableChart = new google.visualization.Table(tableChartContainer);
+            tableChart.draw(requests, {showRowNumber: false, sortColumn: 1, sortAscending: false});
+
+        let chartContainer = document.createElement("div");
+            chartContainer.classList.add("col-sm-6");
+            chartContainer.appendChild(pieChartContainer);
+            chartContainer.appendChild(tableChartContainer);
+
+        parentNode.appendChild(chartContainer);
+    }
+
+    function drawDomainRequestChart(data, parentNode) {
+        let fv = data.runs["1"].firstView;
+
+        let requests = new google.visualization.DataTable();
+            requests.addColumn('string', 'Domain');
+            requests.addColumn('number', 'Requests');
+            requests.addRows(Object.keys(fv.domains).length);
+
+        let index = 0;
+        for (let prop in fv.domains) {
+            requests.setValue(index, 0, prop);
+            requests.setValue(index, 1, fv.domains[prop].requests);
+
+            index++;
+        }
+
+        let pieChartContainer = document.createElement("div");
+        let pieChart = new google.visualization.PieChart(pieChartContainer);
+            pieChart.draw(requests, {
+                title: 'Requests',
+                width: 550,
+                height: 350,
+                margin: "auto"
+            });
+
+        let tableChartContainer = document.createElement("div");
+            tableChartContainer.style.textAlign = "center";
+
+        let tableChart = new google.visualization.Table(tableChartContainer);
+            tableChart.draw(requests, {showRowNumber: false, sortColumn: 1, sortAscending: false});
+
+        let chartContainer = document.createElement("div");
+            chartContainer.classList.add("col-sm-6");
+            chartContainer.appendChild(pieChartContainer);
+            chartContainer.appendChild(tableChartContainer);
+
+        parentNode.appendChild(chartContainer);
+    }
+
+    function drawDomainBytes(data, parentNode) {
+        let fv = data.runs["1"].firstView;
+
+        let requests = new google.visualization.DataTable();
+            requests.addColumn('string', 'Domain');
+            requests.addColumn('number', 'Bytes');
+            requests.addRows(Object.keys(fv.domains).length);
+
+        let index = 0;
+        for (let prop in fv.domains) {
+            requests.setValue(index, 0, prop);
+            requests.setValue(index, 1, fv.domains[prop].bytes);
+
+            index++;
+        }
+
+        let pieChartContainer = document.createElement("div");
+        let pieChart = new google.visualization.PieChart(pieChartContainer);
+            pieChart.draw(requests, {
+                title: 'Bytes',
+                width: 550,
+                height: 350,
+                margin: "auto"
+            });
+
+        let tableChartContainer = document.createElement("div");
+            tableChartContainer.style.textAlign = "center";
+
+        let tableChart = new google.visualization.Table(tableChartContainer);
+            tableChart.draw(requests, {showRowNumber: false, sortColumn: 1, sortAscending: false});
+
+        let chartContainer = document.createElement("div");
+            chartContainer.classList.add("col-sm-6");
+            chartContainer.appendChild(pieChartContainer);
+            chartContainer.appendChild(tableChartContainer);
+
+        parentNode.appendChild(chartContainer);
+    }
+</script>
+}
